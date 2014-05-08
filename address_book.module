@@ -1,0 +1,175 @@
+<?php
+
+/**
+ * @file
+ * This file provides basic hooks imlementations.
+ */
+
+// Load CRUD functions.
+module_load_include('crud.inc', 'address_book');
+
+/**
+ * kva
+ * Implements hook_menu().
+ *
+ * @return array
+ */
+function address_book_menu() {
+
+  $items['address-book'] = array(
+    'title' => 'Address book',
+    'page callback' => 'drupal_get_form', //drupal_get_form
+    'access callback' => 'user_access',
+    'access arguments' => array('visit address_book sample page'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  $items['address-book/list'] = array(
+    'title' => 'Address book',
+    'page callback' => 'address_book_page_address_book', //'address_book_page_address_book', //drupal_get_form
+    //'page arguments'=> 'views-form-address-book-page',
+    'access callback' => 'user_access',
+    'access arguments' => array('visit address_book sample page'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  $items['admin/content/address_book/name/%'] = array(
+    'description' => t('Contact page'),
+    'page callback' => 'address_book_page_view',
+    'page arguments' => array(4),
+    'access callback' => 'address_book_access',
+    'access arguments' => array(4),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+/**
+ * page callback for address-book/list
+ * @return array|mixed
+ */
+function address_book_page_address_book() {
+  return drupal_get_form('address_book_form_alter');
+}
+
+
+/**
+ * Impliments hook_form_alter
+ * @param $form
+ * @param $form_state
+ * @param $form_id
+ */
+function address_book_form_alter(&$form, &$form_state, $form_id) {
+
+  if ($form_id == "views_form_address_book_page") {
+    drupal_set_breadcrumb(array(
+      l(t('Home'), '<front>'),
+      'Addressbook'
+    ));
+    $form['Create_contact'] = array(
+      '#type' => 'link',
+      '#title' => t('Create new contact'),
+      '#href' => 'admin/content/address_book/add', // . $node->nid,
+      '#weight' => 0,
+    );
+  }
+}
+
+/**
+ * Implements hook_access().
+ */
+function address_book_access($op = NULL, $address_book = NULL, $account = NULL) {
+  return user_access('administer site configuration');
+}
+
+/**
+ * impliments hook_entity_info
+ * @return array
+ */
+function address_book_entity_info() {
+  return array(
+    'address_book' => array(
+      'label' => t('Address book'),
+      'base table' => 'address_book',
+      'fieldable' => TRUE,
+      'entity keys' => array(
+        'id' => 'cid',
+        'label' => 'title'
+
+      ),
+      'bundles' => array(
+        'address_book' => array(
+          'label' => t('Address book'),
+          'admin' => array(
+            'path' => 'admin/content/address_book/structure',
+            'access arguments' => array('administer site configuration'),
+          ),
+        ),
+      ),
+      // Entity API-related parameters.
+      'controller class' => 'EntityAPIController',
+      'entity class' => 'Entity',
+      'admin ui' => array(
+        'path' => 'admin/content/address_book',
+        'file' => 'address_book.admin.inc',
+      ),
+      'module' => 'address_book',
+      'access callback' => 'address_book_access',
+    ),
+  );
+}
+
+/**
+ * page for contact view
+ * @param $cid
+ * @return array
+ */
+function address_book_page_view($cid) {
+  $variables = address_book_load($cid);
+  $output = array();
+  if ($variables) {
+    $address_book_wrapped = entity_metadata_wrapper('address_book', $variables);
+    //Неудавшаясь попытка отформатировать вывод. не смог добраться до uri поля photo
+    /*   $var = array (
+         'first_name' => $address_book_wrapped->field_first_name->value(),
+         'last_name' => $address_book_wrapped->field_last_name->value(),
+         'image' => $address_book_wrapped->field_photo->value(),//value(),//->uri,//->url->value(),
+         'category' => $address_book_wrapped->field_category->getPropertyInfo(),//->value()->tid,
+         'email' => $address_book_wrapped->field_email->value(),
+         'phone' => $address_book_wrapped->field_phone->value(),
+         'birthday' => $address_book_wrapped->field_birthday->value(),
+         'notes' => $address_book_wrapped->field_notes->value(),
+
+       );
+       //dsm($variables);
+       $varim = array(
+         'width' => '300px',
+         'path' => $var['image'],
+       );
+       //if (!empty($var)) {
+       $output .= '<div><h3>' . $var['first_name']. '</h3></div>';
+       $output .= theme('image', $varim);
+       $output .= '<div>' . 'Category: ' . $var['category'] . '</div>';
+       $output .= '<div>' . 'Email: ' . $var['email'] . '</div>';
+       $output .= '<div>' . 'Phone: ' . $var['phone'] . '</div>';
+       $output .= '<div>' . 'Birthday: ' . $var['birthday'] . '</div>';
+       $output .= '<div>' . 'Notes: ' . $var['notes'] . '</div>';
+   */
+  }
+  $output = $address_book_wrapped->view();
+  return $output;
+}
+
+
+/**
+ * hook_views_bulk_operations_form_alter().
+ */
+function address_book_views_bulk_operations_form_alter(&$form, &$form_state, $vbo) {
+
+  if ($form_state['step'] == 'views_form_views_form') {
+    //dsm($form);
+    $form['actions']['action::views_bulk_operations_delete_item'] = $form['select']['action::views_bulk_operations_delete_item'];
+    $form['select']['action::views_bulk_operations_delete_item']['#printed'] = TRUE;
+    $form['actions']['submit']['#access'] = FALSE;
+    $form['actions']['#access'] = TRUE;
+  }
+
+}
