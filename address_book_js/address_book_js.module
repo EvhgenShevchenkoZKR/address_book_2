@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the address_book_js feature.
+ */
+
+include_once 'address_book_js.features.inc';
