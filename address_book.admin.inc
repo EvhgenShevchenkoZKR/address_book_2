@@ -14,6 +14,8 @@
  * @param string $op
  */
 function address_book_form($form, &$form_state, $address_book, $op = 'edit') {
+  dsm($form_state);
+  //dsm($address_book);
   field_attach_form('address_book', $address_book, $form, $form_state);
 
   $node_wrapper = entity_metadata_wrapper('address_book', $address_book);
@@ -49,3 +51,5 @@ function address_book_form_submit($form, &$form_state) {
 
   $form_state['redirect'] = 'admin/content/address_book';
 }
+
+
